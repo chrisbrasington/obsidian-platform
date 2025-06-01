@@ -34,6 +34,30 @@ def copy_to_clipboard(text):
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
 
+def focus_obsidian_and_search():
+    """Focus Obsidian window and perform search"""
+    import time
+    
+    try:
+        # Focus Obsidian window (assuming it contains "Obsidian" in the title)
+        subprocess.run(['swaymsg', '[title=".*Obsidian.*"] focus'], check=True)
+        time.sleep(0.2)  # Small delay to ensure window is focused
+        
+        # Send Ctrl+Space (game search)
+        subprocess.run(['wtype', '-M', 'ctrl', '-k', 'space'], check=True)
+        time.sleep(0.1)
+        
+        # Send Ctrl+V (paste)
+        subprocess.run(['wtype', '-M', 'ctrl', '-k', 'v'], check=True)
+        time.sleep(0.1)
+        
+        # Send Enter (search)
+        subprocess.run(['wtype', '-k', 'Return'], check=True)
+        
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
 def extract_titles():
     with open(HTML_PATH, 'r', encoding='utf-8') as f:
         soup = BeautifulSoup(f, 'html.parser')
@@ -85,17 +109,30 @@ def main():
             search_term = title.replace(' ', '+')
             print(f'https://store.steampowered.com/search/?term={search_term}')
             
-            # Copy title to clipboard
+            # Copy title to clipboard and trigger Obsidian search
             if copy_to_clipboard(title):
-                print(f"[{i}] Missing file for: {title} (copied to clipboard)")
-            else:
-                print(f"[{i}] Missing file for: {title} (clipboard copy failed)")
+                # print(f"[{i}]/[{len(titles)}] Missing file for: {title} (copied to clipboard)")
+                print(f"[{i}]\n\n{title}\n")
+                
+                # Ask if user wants to auto-search in Obsidian
+                auto_search = input("Auto-search in Obsidian? (y/n, default=y): ").strip().lower()
+                if auto_search == 'q':
+                    save_progress(i)
+                    return
+                elif auto_search != 'n':
+                    if focus_obsidian_and_search():
+                        print("✅ Obsidian search triggered")
+                    else:
+                        print("❌ Failed to trigger Obsidian search (install wtype & ensure Obsidian is open)")
+                else:
+                    # print(f"[{i}] Missing file for: {title} (clipboard copy failed)")
+                    print(f"[{i}]\n\n{title}\n\n")
             
-            response = input("Press Enter to continue, or 'q' to quit: ")
-            if response.lower() == 'q':
-                print("Progress saved. Exiting.")
-                save_progress(i)
-                return
+            #response = input("Continue? ")
+            #if response.lower() == 'q':
+            #    print("Progress saved. Exiting.")
+            #    save_progress(i)
+            #    return
         
         # Save progress after each title
         save_progress(i + 1)
