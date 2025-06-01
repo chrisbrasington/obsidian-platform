@@ -64,7 +64,9 @@ def extract_titles():
     
     titles = []
     for row in soup.find_all('tr'):
-        if 'Demo' in row.get_text():
+        if 'demo' in row.get_text().to_lower():
+            continue
+        if 'benchmark' in row.get_text().to_lower():
             continue
         
         tds = row.find_all('td')
@@ -103,6 +105,7 @@ def main():
     
     for i in range(start_index, len(titles)):
         title = titles[i]
+        title = title.replace('™', '')
         
         # Check for matching file
         if not any(title in fname for fname in os.listdir(GAMES_DIR)):
@@ -111,8 +114,15 @@ def main():
             
             # Copy title to clipboard and trigger Obsidian search
             if copy_to_clipboard(title):
-                # print(f"[{i}]/[{len(titles)}] Missing file for: {title} (copied to clipboard)")
-                print(f"[{i}]\n\n{title}\n")
+
+                bar_length = 30  # length of the loading bar
+                progress = (i + 1) / len(titles)
+                percent = round(progress * 100)
+                filled_length = round(bar_length * progress)
+                bar = '#' * filled_length + '-' * (bar_length - filled_length)
+
+                print(f"\n[{bar}] {percent}%", end=' ')
+                print(f"[{i + 1}]/[{len(titles)}]\n{title}\n")
                 
                 auto_search = input("Auto-search in Obsidian? (y/n/[number], default=y): ").strip().lower()
 
@@ -145,7 +155,9 @@ def main():
             #    print("Progress saved. Exiting.")
             #    save_progress(i)
             #    return
-        
+        else:
+            print(f'FOUND {title}')
+
         # Save progress after each title
         save_progress(i + 1)
     
