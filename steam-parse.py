@@ -114,20 +114,32 @@ def main():
                 # print(f"[{i}]/[{len(titles)}] Missing file for: {title} (copied to clipboard)")
                 print(f"[{i}]\n\n{title}\n")
                 
-                # Ask if user wants to auto-search in Obsidian
-                auto_search = input("Auto-search in Obsidian? (y/n, default=y): ").strip().lower()
+                auto_search = input("Auto-search in Obsidian? (y/n/[number], default=y): ").strip().lower()
+
                 if auto_search == 'q':
                     save_progress(i)
                     return
-                elif auto_search != 'n':
-                    if focus_obsidian_and_search():
-                        print("✅ Obsidian search triggered")
-                    else:
-                        print("❌ Failed to trigger Obsidian search (install wtype & ensure Obsidian is open)")
+                elif auto_search == 'n':
+                    pass  # Do nothing, just continue
                 else:
-                    # print(f"[{i}] Missing file for: {title} (clipboard copy failed)")
-                    print(f"[{i}]\n\n{title}\n\n")
-            
+                    # Check if input is a number
+                    if auto_search.isdigit():
+                        n = int(auto_search)
+                        words = title.split()
+                        if n > 0 and n < len(words):
+                            search_phrase = ' '.join(words[:n])
+                        else:
+                            search_phrase = title
+                    else:
+                        search_phrase = title  # default to full title for 'y' or empty input
+
+                    if copy_to_clipboard(search_phrase):
+                        print(f"🔍 Searching for: {search_phrase}")
+                        if focus_obsidian_and_search():
+                            print("✅ Obsidian search triggered")
+                        else:
+                            print("❌ Failed to trigger Obsidian search")
+
             #response = input("Continue? ")
             #if response.lower() == 'q':
             #    print("Progress saved. Exiting.")
