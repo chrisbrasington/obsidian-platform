@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 from bs4 import BeautifulSoup
+import webbrowser
 
 # Constants
 HTML_PATH = 'account.html'
@@ -105,12 +106,14 @@ def main():
     
     for i in range(start_index, len(titles)):
         title = titles[i]
-        title = title.replace('™', '')
+        title = title.replace('™', '').replace(':', ' -').replace('(ROW)', '')
+
+        if 'soundtrack' in title.lower() or 'demo' in title.lower() or 'benchmark' in title.lower() or 'art book' in title.lower() or 'trial' in title.lower():
+            print(f'skipping: {title}')
+            continue
         
         # Check for matching file
         if not any(title in fname for fname in os.listdir(GAMES_DIR)):
-            search_term = title.replace(' ', '+')
-            print(f'https://store.steampowered.com/search/?term={search_term}')
             
             # Copy title to clipboard and trigger Obsidian search
             if copy_to_clipboard(title):
@@ -143,6 +146,13 @@ def main():
                     else:
                         search_phrase = title  # default to full title for 'y' or empty input
 
+                    search_term = search_phrase.replace(' ', '+')
+                    url = f'https://store.steampowered.com/search/?term={search_term}'
+                    print(url)
+                    webbrowser.open(url)
+
+                    search_phrase = search_phrase.replace(' -', ':')
+
                     if copy_to_clipboard(search_phrase):
                         print(f"🔍 Searching for: {search_phrase}")
                         if focus_obsidian_and_search():
@@ -156,7 +166,9 @@ def main():
             #    save_progress(i)
             #    return
         else:
+            print('~'*50)
             print(f'FOUND {title}')
+            print('~'*50)
 
         # Save progress after each title
         save_progress(i + 1)
